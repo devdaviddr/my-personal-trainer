@@ -33,6 +33,7 @@
 ```bash
 Node.js v18+
 npm or yarn
+Docker (for deployment)
 ```
 
 ### 📦 Installation
@@ -42,7 +43,7 @@ cd my-personal-trainer
 npm install
 ```
 
-### 🚀 Development
+### 🚀 Local Development
 ```bash
 # Start development server
 npm run dev
@@ -51,10 +52,19 @@ npm run dev
 http://localhost:5173
 ```
 
-### 🏗️ Production Build
+### 🏗️ Local Production Build
 ```bash
 npm run build
 npm run preview
+```
+
+### 🐳 Docker Development
+```bash
+# Build and run with Docker
+docker-compose up --build
+
+# Access at
+http://localhost:3000
 ```
 
 ## 📱 PWA Features
@@ -67,10 +77,68 @@ npm run preview
 
 ## 🌐 Deployment
 
-Deploy to your preferred platform:
-- 🟢 **Vercel**: Zero-config deployment
-- 🔷 **Netlify**: Continuous deployment
-- 📄 **GitHub Pages**: Free static hosting
+### 🖥️ VPS Deployment with Docker
+
+#### Production Setup
+```bash
+# Clone repository on your VPS
+git clone https://github.com/devdaviddr/my-personal-trainer.git
+cd my-personal-trainer
+
+# Build and deploy with Docker
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+#### Environment Variables
+Create a `.env` file:
+```bash
+DATABASE_URL=postgresql://username:password@db:5432/personal_trainer
+NODE_ENV=production
+JWT_SECRET=your-secret-key
+```
+
+### ☁️ Cloudflare Tunnel Setup
+
+#### Install Cloudflare Tunnel
+```bash
+# Install cloudflared on your VPS
+curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+```
+
+#### Configure Tunnel
+```bash
+# Authenticate with Cloudflare
+cloudflared tunnel login
+
+# Create tunnel
+cloudflared tunnel create my-personal-trainer
+
+# Configure tunnel (tunnel.yml)
+tunnel: <tunnel-id>
+credentials-file: /home/user/.cloudflared/<tunnel-id>.json
+ingress:
+  - hostname: trainer.yourdomain.com
+    service: http://localhost:3000
+  - service: http_status:404
+```
+
+#### Run Tunnel
+```bash
+# Start tunnel
+cloudflared tunnel run my-personal-trainer
+
+# Or as a service
+sudo cloudflared service install
+```
+
+### 🔧 Local Testing
+For local development and testing:
+```bash
+npm run dev    # Development server
+npm run build  # Production build
+npm run preview # Preview production build
+```
 
 ## 🤝 Contributing
 

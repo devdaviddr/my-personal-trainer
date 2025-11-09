@@ -7,11 +7,11 @@
 
 ## 🚀 Technology Stack
 
-| **Frontend** | **Backend** | **Database** |
-|-------------|------------|--------------|
-| ⚛️ React (latest) | 🔥 HonoJS | 🐘 PostgreSQL |
-| 📘 TypeScript | | |
-| ⚡ Vite PWA | | |
+| **Frontend** | **Backend** | **Database** | **Authentication** |
+|-------------|------------|--------------|-------------------|
+| ⚛️ React (latest) | 🔥 HonoJS | �️ Cloudflare D1 | 🔐 Auth0 |
+| 📘 TypeScript | ☁️ Cloudflare Workers | | |
+| ⚡ Vite PWA | | | |
 
 ## 🌟 Features
 
@@ -33,7 +33,8 @@
 ```bash
 Node.js v18+
 npm or yarn
-Docker (for deployment)
+Cloudflare account
+Auth0 account
 ```
 
 ### 📦 Installation
@@ -58,13 +59,19 @@ npm run build
 npm run preview
 ```
 
-### 🐳 Docker Development
+### 🐳 Cloudflare Development
 ```bash
-# Build and run with Docker
-docker-compose up --build
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Start local development with Cloudflare Workers
+npm run dev:cf
 
 # Access at
-http://localhost:3000
+http://localhost:8787
 ```
 
 ## 📱 PWA Features
@@ -77,67 +84,83 @@ http://localhost:3000
 
 ## 🌐 Deployment
 
-### 🖥️ VPS Deployment with Docker
+### ☁️ Cloudflare Pages + D1 Database
 
-#### Production Setup
+#### Setup D1 Database
 ```bash
-# Clone repository on your VPS
-git clone https://github.com/devdaviddr/my-personal-trainer.git
-cd my-personal-trainer
+# Create D1 database
+wrangler d1 create personal-trainer-db
 
-# Build and deploy with Docker
-docker-compose -f docker-compose.prod.yml up -d
+# Run migrations
+wrangler d1 migrations apply personal-trainer-db --local
+wrangler d1 migrations apply personal-trainer-db
 ```
 
 #### Environment Variables
 Create a `.env` file:
 ```bash
-DATABASE_URL=postgresql://username:password@db:5432/personal_trainer
+# Auth0 Configuration
+AUTH0_DOMAIN=your-domain.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-client-secret
+
+# Cloudflare D1
+DATABASE_ID=your-d1-database-id
+
+# Application
 NODE_ENV=production
-JWT_SECRET=your-secret-key
 ```
 
-### ☁️ Cloudflare Tunnel Setup
-
-#### Install Cloudflare Tunnel
+#### Deploy to Cloudflare Pages
 ```bash
-# Install cloudflared on your VPS
-curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared.deb
+# Build for production
+npm run build
+
+# Deploy with Wrangler
+wrangler pages deploy dist
+
+# Or connect GitHub repository for automatic deployments
 ```
 
-#### Configure Tunnel
-```bash
-# Authenticate with Cloudflare
-cloudflared tunnel login
+#### Configure wrangler.toml
+```toml
+name = "my-personal-trainer"
+compatibility_date = "2024-11-10"
 
-# Create tunnel
-cloudflared tunnel create my-personal-trainer
+[[d1_databases]]
+binding = "DB"
+database_name = "personal-trainer-db"
+database_id = "your-database-id"
 
-# Configure tunnel (tunnel.yml)
-tunnel: <tunnel-id>
-credentials-file: /home/user/.cloudflared/<tunnel-id>.json
-ingress:
-  - hostname: trainer.yourdomain.com
-    service: http://localhost:3000
-  - service: http_status:404
+[vars]
+AUTH0_DOMAIN = "your-domain.auth0.com"
+AUTH0_CLIENT_ID = "your-client-id"
 ```
 
-#### Run Tunnel
-```bash
-# Start tunnel
-cloudflared tunnel run my-personal-trainer
+### 🔐 Auth0 Setup
 
-# Or as a service
-sudo cloudflared service install
+#### Configure Auth0 Application
+1. Create new **Single Page Application** in Auth0
+2. Set **Allowed Callback URLs**: `https://your-app.pages.dev/callback`
+3. Set **Allowed Logout URLs**: `https://your-app.pages.dev`
+4. Set **Allowed Web Origins**: `https://your-app.pages.dev`
+
+#### Add Environment Variables to Cloudflare Pages
+```bash
+# In Cloudflare Pages dashboard, add:
+AUTH0_DOMAIN=your-domain.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-client-secret
+DATABASE_ID=your-d1-database-id
 ```
 
 ### 🔧 Local Testing
 For local development and testing:
 ```bash
-npm run dev    # Development server
-npm run build  # Production build
-npm run preview # Preview production build
+npm run dev       # Development server
+npm run dev:cf    # Cloudflare Workers development
+npm run build     # Production build
+npm run preview   # Preview production build
 ```
 
 ## 🤝 Contributing
